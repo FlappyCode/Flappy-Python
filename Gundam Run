@@ -1,0 +1,1189 @@
+#Jingtao Xu,jingtaox,A
+
+from Tkinter import *
+import random
+
+def button1Pressed(canvas):# we select our skill
+    canvas.data.inCover=False
+    canvas.data.inSelection=True
+
+
+def button6Pressed(canvas):# we choose transform skill and start the game
+    canvas.data.inSelection=False
+    canvas.data.char=1
+    canvas.data.inGame=True
+    init(canvas)
+
+
+def button7Pressed(canvas):# we choose shot skill and start the game
+    canvas.data.inSelection=False
+    canvas.data.char=2
+    canvas.data.inGame=True
+    init(canvas)
+
+
+def button2Pressed(canvas):# we are in the instruction
+    canvas.data.inInstruction=True
+    canvas.data.inCover=False
+
+def button3Pressed(canvas):# we go back to title
+    canvas.data.inInstruction=False
+    canvas.data.inCover=True
+
+def button4Pressed(canvas): # we restart the game
+    canvas.data.inGame=True
+    init(canvas)
+
+def button5Pressed(canvas):# we go back to title
+    init0(canvas)
+
+def redrawAll(canvas):
+    canvas.delete(ALL)
+    if canvas.data.inCover==True:
+        drawCover(canvas)
+    elif canvas.data.inSelection==True:
+        drawSelection(canvas)
+    elif canvas.data.inInstruction==True:
+        drawInstruction(canvas)
+    elif canvas.data.inGame==True:
+        drawGame(canvas)
+    elif canvas.data.isGameOver==True:
+        drawGameover(canvas)
+
+
+def drawGameover(canvas):
+    # background (fill canvas)
+    canvas.create_image(292,195,image=canvas.data.gameover)
+    # print buttons in window
+    drawHighScore(canvas)
+    b4 = canvas.data.button4
+    canvas.create_window(292, 300, window=b4)
+    b5=canvas.data.button5
+    canvas.create_window(500, 30, window=b5)
+    canvas.data.inGame=False
+
+def drawSelection(canvas):
+    # background (fill canvas)
+    canvas.create_image(292,195,image=canvas.data.selection)
+    # print buttons in window
+    b6 = canvas.data.button6
+    canvas.create_window(150, 300, window=b6)
+    b7 = canvas.data.button7
+    canvas.create_window(440, 300, window=b7)
+    
+
+def drawInstruction(canvas):# instruction
+    # background (fill canvas)
+    canvas.create_image(292,195,image=canvas.data.instruction)
+    # print buttons in window
+    b3 = canvas.data.button3
+    canvas.create_window(500, 30, window=b3)
+
+
+def drawCover(canvas):
+    # background (fill canvas)
+    if canvas.data.clock%10 in range(5):
+        canvas.create_image(292,195,image=canvas.data.cover)
+    else:
+        canvas.create_image(292,195,image=canvas.data.cover1)
+    # print buttons in window
+    b1 = canvas.data.button1
+    canvas.create_window(450, 150, window=b1)
+    b2 = canvas.data.button2
+    canvas.create_window(450, 200, window=b2)
+
+def init0(canvas):
+    canvas.pack() # moved canvas packing to here (before button packing!)
+    canvas.data.inCover=True
+    canvas.data.inInstruction=False
+    canvas.data.inSelection=False
+    canvas.data.inGame=False
+
+    
+
+def keyPressed(canvas,event):
+    canvas = event.widget.canvas
+    ctrl  = ((event.state & 0x0004) != 0)
+    shift = ((event.state & 0x0001) != 0)
+    if canvas.data.inGame==True:
+        if event.char=="p":
+            gamePause(canvas)
+        if canvas.data.isGamePause==1:# game not paused
+            if event.char=="q":
+                gameOver(canvas)
+            elif event.char=="r":
+                init(canvas)
+            if (canvas.data.isGameOver==False
+                and canvas.data.eqTimer==0
+                and canvas.data.transformEffect==0
+                and canvas.data.beam==0):
+                if (event.keysym == "Left"
+                    and canvas.data.energy>=1):# yay we use skill
+                    if (canvas.data.trans==-1 and canvas.data.energy>=198):
+                        # least energy we need to use skill
+                        canvas.data.transformEffect=100
+                        if canvas.data.char==1:# we transform
+                            canvas.data.energy-=50
+                        else:# we shot
+                            canvas.data.energy-=200
+                        canvas.data.trans=1
+                    elif canvas.data.trans==1:
+                        canvas.data.trans*=(-1)
+                if event.keysym == "Up" :
+                    canvas.data.keyPressed=1
+                elif (event.keysym == "Down"
+                      and canvas.data.trans==1
+                      and canvas.data.char==1):# we transformed
+                    canvas.data.keyPressed=2
+                else:
+                    canvas.data.keyPressed=0
+    else:
+        pass
+    redrawAll(canvas)
+
+def keyReleased(canvas,event):
+    canvas = event.widget.canvas
+    ctrl  = ((event.state & 0x0004) != 0)
+    shift = ((event.state & 0x0001) != 0)
+    if canvas.data.inGame==True:
+        canvas.data.keyPressed=0
+    redrawAll(canvas)  
+    
+
+def gamePause(canvas):
+    canvas.data.isGamePause=canvas.data.isGamePause*(-1)
+
+def gameOver(canvas):
+    canvas.data.isGameOver=True
+
+def timerFired(canvas):
+    redrawAll(canvas)
+    canvas.data.clock+=1
+    if canvas.data.inGame==True:
+        canvas.data.mainTimer+=1
+        if (canvas.data.isGamePause==1
+            and canvas.data.transformEffect==0
+            and canvas.data.isGameOver==False):
+            canvas.data.width=(canvas.data.width-3*canvas.data.speed)%584
+            if type(canvas.data.ob1)==list:
+                canvas.data.ob1[0]-=3*canvas.data.speed
+            if type(canvas.data.ob2)==list:
+                canvas.data.ob2[0]-=3*canvas.data.speed
+            if type(canvas.data.ob3)==list:
+                canvas.data.ob3[0]-=3*canvas.data.speed
+            if type(canvas.data.ob4)==list:
+                canvas.data.ob4[0]-=3*canvas.data.speed
+            if canvas.data.enemyType==5:
+                canvas.data.eqCoolDown=random.randint(500,1500)
+                canvas.data.energyCoolDown=random.randint(500,1500)
+                canvas.data.energylocation=None
+                canvas.data.eqlocation=None
+            createEq(canvas)
+            createEnergy(canvas)
+            if canvas.data.beam!=0:
+                destroy(canvas)
+            if canGetEnergy(canvas) and canvas.data.energy<=900:
+                canvas.data.energy+=200
+                canvas.data.energyCoolDown=random.randint(300,600)
+            if canGetEq(canvas):
+                currentSpeed(canvas)
+                canvas.data.eqTimer=400
+            if canvas.data.eqTimer!=0:
+                speedUp(canvas)
+            canvas.data.score+=1
+            canvas.data.timer+=1
+            canvas.data.eqCoolDown-=1
+            if canvas.data.eqTimer==0:
+                canvas.data.enemyCoolDown-=1
+                canvas.data.energyCoolDown-=1
+            if canvas.data.trans==1 and canvas.data.char==1:
+                canvas.data.energy-=2
+                if canvas.data.energy<=0:
+                    canvas.data.trans=-1
+            t=(280/canvas.data.speed)
+            # time for an obstacle to go through the whole screen
+            if (canvas.data.timer%t<1 and canvas.data.eqTimer==0
+                and canvas.data.enemyType!=5):
+                createObstacle1(canvas)
+            if abs(((canvas.data.timer+(0.25*t))%t)<1 and canvas.data.eqTimer==0
+                and canvas.data.enemyType!=5):
+                createObstacle2(canvas)
+            if abs(((canvas.data.timer+(0.5*t))%t)<1 and canvas.data.eqTimer==0
+                and canvas.data.enemyType!=5):
+                createObstacle3(canvas)
+            if abs(((canvas.data.timer+(0.75*t))%t)<1 and canvas.data.eqTimer==0
+                and canvas.data.enemyType!=5):
+                createObstacle4(canvas)
+        if (canvas.data.isGamePause==1
+            and canvas.data.isGameOver==False
+            and canvas.data.transformEffect>0):
+            transformEffect(canvas)
+    delay = canvas.data.delay # milliseconds
+    def f():
+        timerFired(canvas) # DK: define local fn in closure
+    canvas.after(delay, f) # pause, then call timerFired again
+
+
+def currentSpeed(canvas):
+    if canvas.data.speed<1.6:
+        canvas.data.speed=1+0.1*(canvas.data.timer/800)
+
+
+def highScore(canvas):
+    score=canvas.data.score
+    canvas.data.highScore+=[score]# add new score to the list
+
+def drawHighScore(canvas):
+    score=canvas.data.score
+    width=295
+    height=100
+    dheight=20
+    highScore=sorted(canvas.data.highScore)
+    canvas.create_text(width,height+20,
+            text="Your score"+":"+str(score),
+            fill="white", font=("Helvetica", 22, "bold"))
+    for x in xrange(-1,-4,-1):# choose 3 scores from the sorted score list
+        if highScore[x]!=0:
+            canvas.create_text(width,height+dheight*(3-x),
+            text="High score"+str(abs(x))+":"+str(highScore[x]),
+            fill="white", font=("Helvetica", 16, "bold"))
+    
+
+def speedUp(canvas):
+    canvas.data.delay=1
+    canvas.data.eqTimer-=1
+    if canvas.data.eqTimer==0:
+        canvas.data.eqCoolDown=random.randint(500,1500)
+        canvas.data.delay=10
+
+def transformEffect(canvas):
+    if canvas.data.char==1:
+        transformEffect1(canvas)
+    else:
+        transformEffect2(canvas)
+
+def transformEffect2(canvas):
+    if canvas.data.transformEffect>0:
+        if canvas.data.mainTimer%6 in range(3):
+            canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.effect1)
+        else:
+            canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.effect2)
+        if canvas.data.transformEffect>=92:
+            canvas.create_image(292,195,image=canvas.data.shot1)
+        elif canvas.data.transformEffect>=84:
+            canvas.create_image(292,195,image=canvas.data.shot2)
+        elif canvas.data.transformEffect>=76:
+            canvas.create_image(292,195,image=canvas.data.shot3)
+        elif canvas.data.transformEffect>=68:
+            canvas.create_image(292,195,image=canvas.data.shot4)
+        elif canvas.data.transformEffect>=60:
+            canvas.create_image(292,195,image=canvas.data.shot5)
+        elif canvas.data.transformEffect>=52:
+            canvas.create_image(292,195,image=canvas.data.shot6)
+        elif canvas.data.transformEffect>=44:
+            canvas.create_image(292,195,image=canvas.data.shot7)
+        elif canvas.data.transformEffect>=36:
+            canvas.create_image(292,195,image=canvas.data.shot8)
+        elif canvas.data.transformEffect>=28:
+            canvas.create_image(292,195,image=canvas.data.shot9)
+        elif canvas.data.transformEffect>=20:
+            canvas.create_image(292,195,image=canvas.data.shot10)
+        elif canvas.data.transformEffect>=12:
+            canvas.create_image(292,195,image=canvas.data.shot11)
+        elif canvas.data.transformEffect>=0:
+            canvas.create_image(292,195,image=canvas.data.shot12)
+        canvas.data.transformEffect-=1
+        canvas.data.beam=100
+
+def beam(canvas):
+    if canvas.data.beam>0:
+        if canvas.data.mainTimer%6 in range(3):
+            canvas.create_image(420,
+                            canvas.data.cy,image=canvas.data.laser3)
+        else:
+            canvas.create_image(420,
+                            canvas.data.cy,image=canvas.data.laser4)
+        canvas.data.beam-=1
+    else:
+        canvas.data.trans=-1
+
+
+
+def transformEffect1(canvas):
+    if canvas.data.transformEffect>0:
+        if canvas.data.mainTimer%6 in range(3):
+            canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.effect1)
+        else:
+            canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.effect2)
+        if canvas.data.transformEffect>=92:
+            canvas.create_image(292,195,image=canvas.data.transform1)
+        elif canvas.data.transformEffect>=84:
+            canvas.create_image(292,195,image=canvas.data.transform2)
+        elif canvas.data.transformEffect>=76:
+            canvas.create_image(292,195,image=canvas.data.transform3)
+        elif canvas.data.transformEffect>=68:
+            canvas.create_image(292,195,image=canvas.data.transform4)
+        elif canvas.data.transformEffect>=60:
+            canvas.create_image(292,195,image=canvas.data.transform5)
+        elif canvas.data.transformEffect>=52:
+            canvas.create_image(292,195,image=canvas.data.transform6)
+        elif canvas.data.transformEffect>=44:
+            canvas.create_image(292,195,image=canvas.data.transform7)
+        elif canvas.data.transformEffect>=36:
+            canvas.create_image(292,195,image=canvas.data.transform8)
+        elif canvas.data.transformEffect>=28:
+            canvas.create_image(292,195,image=canvas.data.transform9)
+        elif canvas.data.transformEffect>=20:
+            canvas.create_image(292,195,image=canvas.data.transform10)
+        elif canvas.data.transformEffect>=12:
+            canvas.create_image(292,195,image=canvas.data.transform11)
+        elif canvas.data.transformEffect>=0:
+            canvas.create_image(292,195,image=canvas.data.transform12)
+        canvas.data.transformEffect-=1
+    
+        
+    
+
+def createPlayer(canvas):
+    if canvas.data.eqTimer!=0:
+        if canvas.data.trans==-1:
+            if canvas.data.timer%10 in range(5):
+                canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player6)
+            else:
+                canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player7)
+        else:
+            if canvas.data.timer%10 in range(5):
+                canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player11)
+            else:
+                canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player10)
+    else:
+        if canvas.data.transformEffect!=0:
+            canvas.create_image(canvas.data.cx,
+                        canvas.data.cy,image=canvas.data.player3)
+        elif canvas.data.trans==-1:
+            if canvas.data.cy>=350:# player is on the ground
+                if canvas.data.timer%6 in range(3):
+                    canvas.create_image(canvas.data.cx,
+                        canvas.data.cy,image=canvas.data.player1)
+                else:
+                    canvas.create_image(canvas.data.cx,
+                        canvas.data.cy,image=canvas.data.player2)
+            else:
+                if canvas.data.keyPressed==False:
+                    canvas.create_image(canvas.data.cx,
+                        canvas.data.cy,image=canvas.data.player3)
+                else:
+                    if canvas.data.timer%6 in range(3):
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player5)
+                    else:
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player4)
+        else:# character transform
+            if canvas.data.char==1:#type 1 transformation
+                if canvas.data.keyPressed==0:
+                    if canvas.data.timer%10 in range(5):
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player11)
+                    else:
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player10)
+                else:
+                    if canvas.data.timer%10 in range(5):
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player9)
+                    else:
+                        canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player8)
+            else:#type 2 transformation
+                if canvas.data.timer%6 in range(3):
+                    canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player12)
+                else:
+                    canvas.create_image(canvas.data.cx,
+                            canvas.data.cy,image=canvas.data.player13)
+        
+
+def createEq(canvas):
+    if canvas.data.eqlocation==None and canvas.data.eqCoolDown==0:
+        cy=random.randint(80,300)
+        canvas.data.eqlocation=[620,cy]
+    if type(canvas.data.eqlocation)==list:
+        if canvas.data.timer%6 in range(3):
+            canvas.create_image(canvas.data.eqlocation[0],
+                            canvas.data.eqlocation[1],image=canvas.data.eq1)
+        else:
+            canvas.create_image(canvas.data.eqlocation[0],
+                            canvas.data.eqlocation[1],image=canvas.data.eq2)
+        canvas.data.eqlocation[0]-=3*canvas.data.speed
+        if canvas.data.eqlocation[0]<=-100:
+            canvas.data.eqlocation=None
+            canvas.data.eqCoolDown=random.randint(1000,2000)
+            
+
+def createEnemy(canvas):
+    if canvas.data.enemylocation==None and canvas.data.enemyCoolDown==0:
+        canvas.data.enemyType=random.randint(2,5)
+        #5 means typeII,so you have 1/5 chance to get typeII enemy
+        if canvas.data.enemyType!=5:
+            cy=canvas.data.cy
+            if canvas.data.score<=3000:
+                number=random.randint(1,3)#number of enemies
+            else:
+                number=random.randint(3,4)#number of enemies
+            canvas.data.enemylocation=[620,cy,number]
+        else:
+            canvas.data.enemyTimer=1000
+            #got some animation for typeII enemy
+            typeII=random.randint(0,3)# 3kinds of position
+            if canvas.data.score<=3000:#level one
+                if typeII in [1,3]:
+                    canvas.data.enemylocation=[620,0]
+                else:
+                    canvas.data.enemylocation=[620,2]
+            else:#level two
+                if typeII in [1,3]:
+                    canvas.data.enemylocation=[620,1]
+                else:
+                    canvas.data.enemylocation=[620,typeII]
+    if (type(canvas.data.enemylocation)==list
+        and canvas.data.enemyType!=5):
+        if canvas.data.enemylocation[1]>=190:
+            for x in xrange(canvas.data.enemylocation[2]):# create n enemies
+                canvas.create_image(canvas.data.enemylocation[0],
+                                    canvas.data.enemylocation[1]-x*50,
+                                    image=canvas.data.enemy1)
+        else:
+            for x in xrange(canvas.data.enemylocation[2]):# create n enemies
+                canvas.create_image(canvas.data.enemylocation[0],
+                                    canvas.data.enemylocation[1]+x*50,
+                                    image=canvas.data.enemy1)
+        if canvas.data.enemylocation[0]>=540:
+            canvas.data.enemylocation[0]-=2
+    if (type(canvas.data.enemylocation)==list
+        and canvas.data.enemyType==5):# typeII enemy, more powerful
+        drawTypeII(canvas)
+        
+
+def drawTypeII(canvas):
+    if canvas.data.enemyTimer>=900:# warning
+        if canvas.data.timer%6 in range(3):
+            canvas.create_image(295,190,image=canvas.data.warning1)
+        else:
+            canvas.create_image(295,190,image=canvas.data.warning2)
+    elif (canvas.data.enemylocation[0]>=540
+          and canvas.data.enemyTimer>=750):# enemyII appears
+        canvas.create_image(canvas.data.enemylocation[0],
+                            (canvas.data.enemylocation[1]-1)*50+200,
+                            image=canvas.data.enemy2)
+        canvas.data.enemylocation[0]-=2
+    elif (canvas.data.enemyTimer>=800):#enemy splits
+        if canvas.data.timer%10 in range(5):
+            canvas.create_image(canvas.data.enemylocation[0],
+                            (canvas.data.enemylocation[1]-1)*50+200,
+                            image=canvas.data.enemy2)
+        else:
+            enemyAvatar(canvas)
+    elif canvas.data.enemyTimer>=750:
+        enemyAvatar(canvas)
+    elif canvas.data.enemyTimer>=600:
+        enemyAvatar(canvas)
+        drawLaser(canvas)
+    elif canvas.data.enemyTimer>=550:#enemy disappear
+        if canvas.data.timer%10 in range(5):
+            canvas.create_image(canvas.data.enemylocation[0],
+                            (canvas.data.enemylocation[1]-1)*50+200,
+                            image=canvas.data.enemy2)
+        else:
+            enemyAvatar(canvas)
+    elif canvas.data.enemyTimer>=500:
+        canvas.create_image(canvas.data.enemylocation[0],
+                            (canvas.data.enemylocation[1]-1)*50+200,
+                            image=canvas.data.enemy2)
+    else:
+        canvas.data.enemylocation[0]+=1
+        canvas.create_image(canvas.data.enemylocation[0],
+                            (canvas.data.enemylocation[1]-1)*50+200,
+                            image=canvas.data.enemy2)
+        if canvas.data.enemylocation[0]>=620:
+            canvas.data.enemyTimer=0
+    if (canvas.data.isGamePause==1
+        and canvas.data.transformEffect==0
+        and canvas.data.enemyTimer>0
+        and canvas.data.isGameOver==False):
+        canvas.data.enemyTimer-=1
+    if canvas.data.enemyTimer==0:
+        currentSpeed(canvas)
+        canvas.data.enemylocation=None
+        canvas.data.enemyType=0
+        canvas.data.enemyCoolDown=random.randint(300,600)
+
+        
+
+def drawLaser(canvas):
+    if canvas.data.timer%6 in range(3):
+        if canvas.data.enemylocation[1]==0:
+            canvas.create_image(230,95,image=canvas.data.laser1)
+            canvas.create_image(230,245,image=canvas.data.laser1)
+        elif canvas.data.enemylocation[1]==1:
+            canvas.create_image(230,90,image=canvas.data.laser1)
+            canvas.create_image(230,300,image=canvas.data.laser1)
+        else:
+            canvas.create_image(230,145,image=canvas.data.laser1)
+            canvas.create_image(230,295,image=canvas.data.laser1)       
+    else:
+        if canvas.data.enemylocation[1]==0:
+            canvas.create_image(230,95,image=canvas.data.laser2)
+            canvas.create_image(230,245,image=canvas.data.laser2)
+        elif canvas.data.enemylocation[1]==1:
+            canvas.create_image(230,90,image=canvas.data.laser2)
+            canvas.create_image(230,300,image=canvas.data.laser2)
+        else:
+            canvas.create_image(230,145,image=canvas.data.laser2)
+            canvas.create_image(230,295,image=canvas.data.laser2)
+
+            
+        
+def enemyAvatar(canvas):
+    if canvas.data.enemylocation[1]==0:
+        canvas.create_image(canvas.data.enemylocation[0],95,
+                            image=canvas.data.enemy2)
+        canvas.create_image(canvas.data.enemylocation[0],245,
+                            image=canvas.data.enemy2)
+    elif canvas.data.enemylocation[1]==1:
+        canvas.create_image(canvas.data.enemylocation[0],90,
+                            image=canvas.data.enemy2)
+        canvas.create_image(canvas.data.enemylocation[0],300,
+                            image=canvas.data.enemy2)
+    else:
+        canvas.create_image(canvas.data.enemylocation[0],145,
+                            image=canvas.data.enemy2)
+        canvas.create_image(canvas.data.enemylocation[0],295,
+                            image=canvas.data.enemy2)
+
+        
+
+def newMissileLocation(canvas):
+    if type(canvas.data.missileL)==list:
+        canvas.data.missileL[0]-=8*canvas.data.speed
+            
+
+def createMissile(canvas):
+    if (type(canvas.data.enemylocation)==list
+        and canvas.data.enemyType!=5):
+        if (canvas.data.enemylocation[0]==540):
+            (cx,cy,number)=(500,canvas.data.enemylocation[1]
+                            ,canvas.data.enemylocation[2])
+            canvas.data.missileL=[cx,cy,number]
+    if type(canvas.data.missileL)==list and canvas.data.enemyType!=5:
+        if canvas.data.missileL[1]>=190:
+            for x in xrange(canvas.data.missileL[2]):# create n misslies
+                canvas.create_image(canvas.data.missileL[0],
+                                    canvas.data.missileL[1]-x*50,
+                                    image=canvas.data.missile)
+        else:
+            for x in xrange(canvas.data.missileL[2]):# create n misslies
+                canvas.create_image(canvas.data.missileL[0],
+                                    canvas.data.missileL[1]+x*50,
+                                    image=canvas.data.missile)
+        if canvas.data.missileL[0]<=-100:
+            canvas.data.missileL=None
+            canvas.data.enemylocation=None
+            canvas.data.enemyCoolDown=random.randint(300,600)
+            
+
+def createEnergy(canvas):
+    if (canvas.data.energylocation==None
+        and canvas.data.energyCoolDown==0):
+        cy=random.randint(80,300)
+        canvas.data.energylocation=[620,cy]
+    if type(canvas.data.energylocation)==list:
+        if canvas.data.timer%6 in range(3):
+            canvas.create_image(canvas.data.energylocation[0],
+                            canvas.data.energylocation[1],
+                                image=canvas.data.energy1)
+        else:
+            canvas.create_image(canvas.data.energylocation[0],
+                            canvas.data.energylocation[1],
+                                image=canvas.data.energy2)
+        canvas.data.energylocation[0]-=3*canvas.data.speed
+        if canvas.data.energylocation[0]<=-100:
+            canvas.data.energylocation=None
+            canvas.data.energyCoolDown=random.randint(300,600)
+            
+def canGetEq(canvas):
+    if (type(canvas.data.eqlocation)==list
+        and canvas.data.eqlocation[0]+60>=canvas.data.cx
+        and canvas.data.eqlocation[0]-60<=canvas.data.cx
+        and canvas.data.eqlocation[1]+60>=canvas.data.cy
+        and canvas.data.eqlocation[1]-60<=canvas.data.cy):
+        canvas.data.eqlocation=None
+        return True
+
+def canGetEnergy(canvas):
+    if (type(canvas.data.energylocation)==list
+        and canvas.data.energylocation[0]+30>=canvas.data.cx
+        and canvas.data.energylocation[0]-30<=canvas.data.cx
+        and canvas.data.energylocation[1]+30>=canvas.data.cy
+        and canvas.data.energylocation[1]-30<=canvas.data.cy):
+        canvas.data.energylocation=None
+        return True
+
+def willCrash(location,canvas):
+    if (type(location)==list and len(location)==2
+            #not type 4 abstacle
+            and canvas.data.cx<=location[0]+10
+            and canvas.data.cx>=location[0]-10
+            and canvas.data.cy<=location[1]+60
+            #half size of obstacle and the character
+            and canvas.data.cy>=location[1]-60):
+            return True
+    elif (type(location)==list and len(location)==3
+            #type 4 abstacle
+            and canvas.data.cy<=location[1]+10
+            and canvas.data.cy>=location[1]-10
+            and canvas.data.cx<=location[0]+150
+            and canvas.data.cx>=location[0]-150):
+            return True
+    else:
+        return False
+
+def willHitMissile(canvas):
+    location=canvas.data.missileL
+    if type(location)==list:
+        number=location[2]
+        if location[1]>=190:# it has missile(s) above itself
+            if (canvas.data.cy<=location[1]+30
+            and canvas.data.cy>=location[1]-30-(number-1)*47#width of missile
+            and canvas.data.cx<=location[0]
+            and canvas.data.cx>=location[0]-70):
+                return True
+        else:
+            if (canvas.data.cy<=location[1]+30+(number-1)*47#width of missile
+            and canvas.data.cy>=location[1]-30
+            and canvas.data.cx<=location[0]
+            and canvas.data.cx>=location[0]-70):
+                return True
+    return False
+
+def willHitLaser(canvas):
+    cy=canvas.data.cy
+    location=canvas.data.enemylocation
+    if (type(location)==list
+        and canvas.data.enemyTimer>=600
+        and  canvas.data.enemyTimer<750):
+        if location[1]==1:# only middle is safe
+            if cy>230 or cy<170:
+                return True
+        if location[1]==2:
+            if cy>80:
+                return True
+        if location[1]==0:
+            if cy<320:
+                return True
+    return False
+
+   
+
+def isGameOver(canvas):
+    if canvas.data.beam==0:
+        if willHitLaser(canvas):
+            return True
+        if canvas.data.eqTimer==0 and canvas.data.trans==-1:
+            #no transfrom and no speep up
+            if willCrash(canvas.data.ob1,canvas):
+                return True
+            elif willCrash(canvas.data.ob2,canvas):
+                return True
+            elif willCrash(canvas.data.ob3,canvas):
+                return True
+            elif willCrash(canvas.data.ob4,canvas):
+                return True
+            elif willHitMissile(canvas):
+                return True
+            else:
+                return False
+        elif canvas.data.eqTimer==0 and canvas.data.trans==1:
+            #we transformed
+            if willCrash(canvas.data.ob1,canvas):
+                canvas.data.energy-=10
+                boom2(canvas)
+            elif willCrash(canvas.data.ob2,canvas):
+                canvas.data.energy-=10
+                boom2(canvas)
+            elif willCrash(canvas.data.ob3,canvas):
+                canvas.data.energy-=10
+                boom2(canvas)
+            elif willCrash(canvas.data.ob4,canvas):
+                canvas.data.energy-=10
+                boom2(canvas)
+            elif willHitMissile(canvas):
+                canvas.data.energy-=40
+                boom2(canvas)
+            return False
+    else:
+        return False
+    
+    
+
+def newPlayerLocation(canvas):
+    if canvas.data.eqTimer==0:
+        if canvas.data.beam!=0:
+            pass
+        elif canvas.data.trans==-1:
+            if canvas.data.cy>=50 and canvas.data.playerSpeed<=0:
+                canvas.data.cy+=canvas.data.playerSpeed
+            elif canvas.data.cy<=350 and canvas.data.playerSpeed>0:
+                canvas.data.cy+=canvas.data.playerSpeed
+        else:
+            if (canvas.data.keyPressed==1# we transformed
+                and canvas.data.cy>=50):#pressed up
+                canvas.data.cy-=6*canvas.data.speed
+            elif (canvas.data.keyPressed==2
+                  and canvas.data.cy<=350):#pressed down
+                canvas.data.cy+=6*canvas.data.speed
+    if isGameOver(canvas)==True:
+        gameOver(canvas)
+        highScore(canvas)
+    
+
+
+def createObstacle1(canvas):
+    ob=[60,150,240,330]
+    obType=random.randint(0,4)# 4 stands for the long obstacle
+    if obType!=4:
+        canvas.data.ob1=[680]+[ob[obType]]
+    else:
+        obY=random.randint(100,290)
+        canvas.data.ob1=[680]+[obY]+["long"]# make type 4 different
+        
+
+def createObstacle2(canvas):
+    ob=[60,150,240,330]
+    obType=random.randint(0,4)
+    if obType!=4:
+        canvas.data.ob2=[680]+[ob[obType]]
+    else:
+        obY=random.randint(100,290)
+        canvas.data.ob2=[680]+[obY]+["long"]# make type 4 different
+
+def createObstacle3(canvas):
+    ob=[60,150,240,330]
+    obType=random.randint(0,4)
+    if obType!=4:
+        canvas.data.ob3=[680]+[ob[obType]]
+    else:
+        obY=random.randint(100,290)
+        canvas.data.ob3=[680]+[obY]+["long"]# make type 4 different
+
+def createObstacle4(canvas):
+    ob=[60,150,240,330]
+    obType=random.randint(0,4)
+    if obType!=4:
+        canvas.data.ob4=[680]+[ob[obType]]
+    else:
+        obY=random.randint(100,290)
+        canvas.data.ob4=[680]+[obY]+["long"]# make type 4 different
+
+def drawSingleOb(canvas,location):
+    if type(location)==list:
+        if len(location)==3:# type 4 obstacle
+            if canvas.data.timer%6 in range(3):
+                canvas.create_image(location[0],
+                            location[1],image=canvas.data.obstacle3)
+            else:
+                canvas.create_image(location[0],
+                            location[1],image=canvas.data.obstacle4)
+        else:
+            if canvas.data.timer%6 in range(3):
+                canvas.create_image(location[0],
+                            location[1],image=canvas.data.obstacle1)
+            else:
+                canvas.create_image(location[0],
+                            location[1],image=canvas.data.obstacle2)
+        
+
+def drawObstacle(canvas):
+    drawSingleOb(canvas,canvas.data.ob1)
+    drawSingleOb(canvas,canvas.data.ob2)
+    drawSingleOb(canvas,canvas.data.ob3)
+    drawSingleOb(canvas,canvas.data.ob4)
+
+def drawEnergyBar(canvas):
+    length=canvas.data.energy/5
+    canvas.create_rectangle(340,20,350+length,40,fill="purple", width=0)
+    canvas.create_image(330,30,image=canvas.data.energy3)
+    canvas.create_rectangle(390,22,395,42,fill="red", width=0)
+    
+
+def drawGame(canvas):
+    image = canvas.data.image
+    imageSize = ( (image.width(), image.height()) )
+    canvas.create_image(canvas.data.width,
+                        canvas.data.height, anchor=E,image=image)
+    canvas.create_image(canvas.data.width,
+                        canvas.data.height, anchor=W,image=image)
+    createPlayer(canvas)
+    if (canvas.data.isGamePause==1
+        and canvas.data.transformEffect==0
+        and canvas.data.isGameOver==False):
+        newPlayerLocation(canvas)
+        newMissileLocation(canvas)
+    drawObstacle(canvas)
+    createEnemy(canvas)
+    createMissile(canvas)
+    if canvas.data.char!=1 and canvas.data.transformEffect==0:
+            beam(canvas)
+    drawEnergyBar(canvas)
+    start(canvas)
+    if canvas.data.beam!=0:
+        createExplosion(canvas)
+    elif canvas.data.beam==0:
+        canvas.data.boomlocation=None
+        canvas.data.boomlocation1=None
+        canvas.data.boomlocation2=None
+        canvas.data.boomlocation3=None
+        canvas.data.boomlocation4=None
+    score=canvas.data.score
+    text="distance:"+str(score)+"m"
+    canvas.create_text(100,30,text=text,
+                       fill="white",font=("Helvetica", 16, "bold"))
+    if canvas.data.keyPressed==False:
+        freeFall(canvas)
+    else:
+        if canvas.data.playerSpeed>(-3)*canvas.data.speed:
+            canvas.data.playerSpeed-=2*canvas.data.speed
+    if canvas.data.isGamePause==-1:
+        canvas.create_text(292,80,text="Game Paused!",fill="white",
+                           font=("Helvetica", 32, "bold"))
+    if canvas.data.isGameOver==True:
+        canvas.create_text(292,190, text="Game Over!",fill="red",
+                           font=("Helvetica", 32, "bold"))
+        boom(canvas)
+
+def boom2(canvas):
+    (cx,cy)=(canvas.data.cx,canvas.data.cy)
+    if canvas.data.mainTimer%10 in [0,1]:#BOOM!!!!!!!!!!
+        canvas.create_image(cx,cy,image=canvas.data.boom1)
+    if canvas.data.mainTimer%10 in [2,3]:
+        canvas.create_image(cx,cy,image=canvas.data.boom2)
+    if canvas.data.mainTimer%10 in [4,5]:
+        canvas.create_image(cx,cy,image=canvas.data.boom3)
+    if canvas.data.mainTimer%10 in [6,7]:
+        canvas.create_image(cx,cy,image=canvas.data.boom4)
+    if canvas.data.mainTimer%10 in [8,9]:
+        canvas.create_image(cx,cy,image=canvas.data.boom5)
+        
+
+def boom(canvas):
+    (cx,cy)=(canvas.data.cx,canvas.data.cy)
+    if canvas.data.boom<=100:
+        if canvas.data.mainTimer%10 in [0,1]:#BOOM!!!!!!!!!!
+            canvas.create_image(cx,cy,image=canvas.data.boom1)
+        if canvas.data.mainTimer%10 in [2,3]:
+            canvas.create_image(cx,cy,image=canvas.data.boom2)
+        if canvas.data.mainTimer%10 in [4,5]:
+            canvas.create_image(cx,cy,image=canvas.data.boom3)
+        if canvas.data.mainTimer%10 in [6,7]:
+            canvas.create_image(cx,cy,image=canvas.data.boom4)
+        if canvas.data.mainTimer%10 in [8,9]:
+            canvas.create_image(cx,cy,image=canvas.data.boom5)
+        canvas.data.boom+=1
+    else:
+        drawGameover(canvas)
+
+def willHitEnemyII(canvas):
+    cy=canvas.data.cy
+    location=canvas.data.enemylocation
+    if (type(location)==list
+        and canvas.data.enemyTimer!=0):
+        if location[1]==1:
+            if cy>230 or cy<170:
+                return True
+        if location[1]==2:
+            if cy>80:
+                return True
+        if location[1]==0:
+            if cy<320:
+                return True
+    return False
+
+
+def willHitEnemyI(canvas):
+    location=canvas.data.enemylocation
+    if type(location)==list and len(location)==3:
+        number=location[2]
+        if location[1]>=190:# it has missile(s) above itself
+            if (canvas.data.cy<=location[1]+60
+            and canvas.data.cy>=location[1]-60-(number-1)*47):#width of enemy
+                return True
+        else:
+            if (canvas.data.cy<=location[1]+60+(number-1)*47#width of enemy
+            and canvas.data.cy>=location[1]-60):
+                return True
+    return False
+
+def willHitOb(location,canvas):
+    if (type(location)==list and len(location)==2
+            #not type 4 abstacle
+            and location[0]>100#not behind the character
+            and canvas.data.cy<=location[1]+115
+            and canvas.data.cy>=location[1]-115):
+            return True
+    elif (type(location)==list and len(location)==3
+            #type 4 abstacle
+            and location[0]>100
+            and canvas.data.cy<=location[1]+75
+            and canvas.data.cy>=location[1]-75):
+            return True
+    else:
+        return False
+
+def canHitEq(canvas):
+    if (type(canvas.data.eqlocation)==list
+        and canvas.data.eqlocation[1]+120>=canvas.data.cy
+        and canvas.data.eqlocation[1]-120<=canvas.data.cy):
+        canvas.data.eqlocation=None
+        return True
+
+def canHitEnergy(canvas):
+    if (type(canvas.data.energylocation)==list
+        and canvas.data.energylocation[1]+90>=canvas.data.cy
+        and canvas.data.energylocation[1]-90<=canvas.data.cy):
+        canvas.data.energylocation=None
+        return True
+
+def createExplosion(canvas):
+    if canvas.data.boomlocation!=None:
+        canvas.create_image(400,190,
+                            image=canvas.data.boom7)
+        canvas.create_image(500,290,
+                            image=canvas.data.boom7)
+        canvas.create_image(450,90,
+                            image=canvas.data.boom7)
+    if canvas.data.boomlocation1!=None:
+        canvas.create_image(canvas.data.boomlocation1[0],
+                            canvas.data.boomlocation1[1],
+                            image=canvas.data.boom6)
+    if canvas.data.boomlocation2!=None:
+        canvas.create_image(canvas.data.boomlocation2[0],
+                            canvas.data.boomlocation2[1],
+                            image=canvas.data.boom6)
+    if canvas.data.boomlocation3!=None:
+        canvas.create_image(canvas.data.boomlocation3[0],
+                            canvas.data.boomlocation3[1],
+                            image=canvas.data.boom6)
+    if canvas.data.boomlocation4!=None:
+        canvas.create_image(canvas.data.boomlocation4[0],
+                            canvas.data.boomlocation4[1],
+                            image=canvas.data.boom6)
+    
+    
+
+def destroy(canvas):#in power mode we can destroy everything
+    if (type(canvas.data.enemylocation==list)):
+        if willHitEnemyII(canvas) or willHitEnemyI(canvas):
+            canvas.data.boomlocation=canvas.data.enemylocation[1]
+            canvas.data.enemylocation=None
+            canvas.data.enemyType=0
+            canvas.data.enemyCoolDown=random.randint(300,600)
+    if willHitOb(canvas.data.ob1,canvas):
+        canvas.data.boomlocation1=canvas.data.ob1
+        canvas.data.ob1=None
+    if willHitOb(canvas.data.ob2,canvas):
+        canvas.data.boomlocation2=canvas.data.ob2
+        canvas.data.ob2=None
+    if willHitOb(canvas.data.ob3,canvas):
+        canvas.data.boomlocation3=canvas.data.ob3
+        canvas.data.ob3=None
+    if willHitOb(canvas.data.ob4,canvas):
+        canvas.data.boomlocation4=canvas.data.ob4
+        canvas.data.ob4=None
+    if canHitEq(canvas):
+        canvas.data.eqCoolDown=random.randint(500,1000)
+        canvas.data.eqlocation=None
+    if canHitEnergy(canvas):
+        canvas.data.energyCoolDown=random.randint(300,600)
+        canvas.data.energylocation=None
+
+
+def freeFall(canvas):
+    if (canvas.data.keyPressed==False
+        and canvas.data.playerSpeed<5*canvas.data.speed):
+        # if key not pressed and player is not falling too fast
+        canvas.data.playerSpeed+=0.5*canvas.data.speed
+        
+def start(canvas):
+    if canvas.data.start>0:
+        canvas.create_text(292,80,text="Game Start!",fill="red",
+                           font=("Helvetica", 32, "bold"))
+        canvas.data.start-=1
+
+
+def init(canvas):
+    canvas.width = canvas.winfo_reqwidth() - 4
+    canvas.height = canvas.winfo_reqheight() - 4
+    canvas.data.height=195
+    canvas.data.width=584
+    # the same width adn height as those of the background picture
+    canvas.data.cx=80# coordinates of the player
+    canvas.data.cy=195
+    canvas.data.start=250
+    canvas.data.boom=0
+    canvas.data.boomlocation=None
+    canvas.data.boomlocation1=None
+    canvas.data.boomlocation2=None
+    canvas.data.boomlocation3=None
+    canvas.data.boomlocation4=None
+    canvas.data.beam=0
+    canvas.data.speed=1
+    canvas.data.score=0
+    canvas.data.timer=1
+    canvas.data.mainTimer=0
+    canvas.data.energy=0
+    canvas.data.trans=-1
+    canvas.data.transformEffect=0
+    canvas.data.missileL=None
+    canvas.data.enemyTimer=0
+    canvas.data.enemyType=0
+    canvas.data.enemylocation=None
+    canvas.data.enemyCoolDown=random.randint(1000,1500)
+    canvas.data.energylocation=None
+    canvas.data.energyCoolDown=random.randint(500,1500)
+    canvas.data.eqlocation=None
+    canvas.data.ob1=None# no obstacle at first
+    canvas.data.ob2=None
+    canvas.data.ob3=None
+    canvas.data.ob4=None
+    canvas.data.eqCoolDown=random.randint(500,1000)
+    canvas.data.keyPressed=False
+    canvas.data.isGamePause=1
+    canvas.data.isGameOver=False
+    canvas.data.eqTimer=250
+    image = PhotoImage(file="background.gif")
+    canvas.data.image = image
+    redrawAll(canvas)
+
+def run():
+    # create the root and the canvas
+    root = Tk()
+    root.resizable(width=FALSE, height=FALSE)
+    canvas = Canvas(root, width=584, height=389)
+    canvas.pack(fill=BOTH, expand=YES)
+    # Store canvas in root and in canvas itself for callbacks
+    root.canvas = canvas.canvas = canvas
+    # Set up canvas data and call init
+    class Struct: pass
+    canvas.data = Struct()
+    canvas.data.clock=0
+    canvas.data.cover=PhotoImage(file="cover.gif")
+    canvas.data.cover1=PhotoImage(file="cover1.gif")
+    canvas.data.selection=PhotoImage(file="select.gif")
+    canvas.data.instruction=PhotoImage(file="instruction.gif")
+    canvas.data.gameover=PhotoImage(file="gameover.gif")
+    canvas.data.shot1=PhotoImage(file="shot1.gif")
+    canvas.data.shot2=PhotoImage(file="shot2.gif")
+    canvas.data.shot3=PhotoImage(file="shot3.gif")
+    canvas.data.shot4=PhotoImage(file="shot4.gif")
+    canvas.data.shot5=PhotoImage(file="shot5.gif")
+    canvas.data.shot6=PhotoImage(file="shot6.gif")
+    canvas.data.shot7=PhotoImage(file="shot7.gif")
+    canvas.data.shot8=PhotoImage(file="shot8.gif")
+    canvas.data.shot9=PhotoImage(file="shot9.gif")
+    canvas.data.shot10=PhotoImage(file="shot10.gif")
+    canvas.data.shot11=PhotoImage(file="shot11.gif")
+    canvas.data.shot12=PhotoImage(file="shot12.gif")
+    canvas.data.transform1=PhotoImage(file="trans1.gif")
+    canvas.data.transform2=PhotoImage(file="trans2.gif")
+    canvas.data.transform3=PhotoImage(file="trans3.gif")
+    canvas.data.transform4=PhotoImage(file="trans4.gif")
+    canvas.data.transform5=PhotoImage(file="trans5.gif")
+    canvas.data.transform6=PhotoImage(file="trans6.gif")
+    canvas.data.transform7=PhotoImage(file="trans7.gif")
+    canvas.data.transform8=PhotoImage(file="trans8.gif")
+    canvas.data.transform9=PhotoImage(file="trans9.gif")
+    canvas.data.transform10=PhotoImage(file="trans10.gif")
+    canvas.data.transform11=PhotoImage(file="trans11.gif")
+    canvas.data.transform12=PhotoImage(file="trans12.gif")
+    canvas.data.player1=PhotoImage(file="wingzero0.gif")
+    canvas.data.player2=PhotoImage(file="wingzero1.gif")
+    canvas.data.player3=PhotoImage(file="wingzero3.gif")
+    canvas.data.player5=PhotoImage(file="wingzero4.gif")
+    canvas.data.player4=PhotoImage(file="wingzero5.gif")
+    canvas.data.player6=PhotoImage(file="wingzero10.gif")
+    canvas.data.player7=PhotoImage(file="wingzero11.gif")
+    canvas.data.player8=PhotoImage(file="wingzero6.gif")
+    canvas.data.player9=PhotoImage(file="wingzero7.gif")
+    canvas.data.player10=PhotoImage(file="wingzero8.gif")
+    canvas.data.player11=PhotoImage(file="wingzero9.gif")
+    canvas.data.player12=PhotoImage(file="wingzero12.gif")
+    canvas.data.player13=PhotoImage(file="wingzero13.gif")
+    canvas.data.obstacle1=PhotoImage(file="ob1.gif")
+    canvas.data.obstacle2=PhotoImage(file="ob2.gif")
+    canvas.data.obstacle3=PhotoImage(file="ob3.gif")
+    canvas.data.obstacle4=PhotoImage(file="ob4.gif")
+    canvas.data.boom1=PhotoImage(file="boom1.gif")
+    canvas.data.boom2=PhotoImage(file="boom2.gif")
+    canvas.data.boom3=PhotoImage(file="boom3.gif")
+    canvas.data.boom4=PhotoImage(file="boom4.gif")
+    canvas.data.boom5=PhotoImage(file="boom5.gif")
+    canvas.data.boom6=PhotoImage(file="boom6.gif")
+    canvas.data.boom7=PhotoImage(file="boom.gif")
+    canvas.data.delay=10
+    canvas.data.eq1=PhotoImage(file="eq1.gif")
+    canvas.data.eq2=PhotoImage(file="eq2.gif")
+    canvas.data.effect1=PhotoImage(file="effect1.gif")
+    canvas.data.effect2=PhotoImage(file="effect2.gif")
+    canvas.data.energy1=PhotoImage(file="energy.gif")
+    canvas.data.energy2=PhotoImage(file="energy1.gif")
+    canvas.data.energy3=PhotoImage(file="energyGauge.gif")
+    canvas.data.missile=PhotoImage(file="missile.gif")
+    canvas.data.enemy1=PhotoImage(file="enemy1.gif")
+    canvas.data.enemy2=PhotoImage(file="enemy2.gif")
+    canvas.data.laser1=PhotoImage(file="laser1.gif")
+    canvas.data.laser2=PhotoImage(file="laser2.gif")
+    canvas.data.laser3=PhotoImage(file="laser3.gif")
+    canvas.data.laser4=PhotoImage(file="laser4.gif")
+    canvas.data.warning1=PhotoImage(file="warning1.gif")
+    canvas.data.warning2=PhotoImage(file="warning2.gif")
+    canvas.data.playerSpeed=3
+    canvas.data.highScore=[0,0,0]
+    canvas.data.type=[60,150,240,330]
+    b1 = Button(canvas, text="Game start",
+                command=lambda:button1Pressed(canvas))
+    canvas.data.button1 = b1
+    b2 = Button(canvas, text="How to Play",
+                command=lambda:button2Pressed(canvas))
+    canvas.data.button2 = b2
+    b3 = Button(canvas, text="Back to Title",
+                command=lambda:button3Pressed(canvas))
+    canvas.data.button3 = b3
+    b4 = Button(canvas, text="Play again",
+                command=lambda:button4Pressed(canvas))
+    canvas.data.button4 = b4
+    b5 = Button(canvas, text="Back to Title",
+                command=lambda:button5Pressed(canvas))
+    canvas.data.button5 = b5
+    b6 = Button(canvas, text="TRANSFORM",
+                command=lambda:button6Pressed(canvas))
+    canvas.data.button6 = b6
+    b7 = Button(canvas, text="POWERFUL SHOT",
+                command=lambda:button7Pressed(canvas))
+    canvas.data.button7 = b7
+    init0(canvas)
+    root.bind("<KeyPress>", lambda event: keyPressed(canvas, event))
+    root.bind("<KeyRelease>", lambda event: keyReleased(canvas, event))
+    timerFired(canvas)
+    # and launch the app
+    root.mainloop()
+    # This call BLOCKS (so your program waits until you close the window!)
+
+run()
