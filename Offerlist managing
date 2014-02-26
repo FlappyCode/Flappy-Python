@@ -1,0 +1,1012 @@
+from Tkinter import *
+import time
+import tkMessageBox
+import tkSimpleDialog
+import cPickle as p
+import string
+import xlrd
+import xlwt
+
+def drawOffer(canvas):
+    title="报价单制作"
+    canvas.create_text(300,50,text=title,
+                       fill="purple", font="times 26 bold")
+    b15 = canvas.data.button15
+    canvas.create_window(100, 400, window=b15, anchor=W)
+    b16 = canvas.data.button16
+    canvas.create_window(200, 400, window=b16, anchor=W)
+    b17 = canvas.data.button17
+    canvas.create_window(250, 400, window=b17, anchor=W)
+    b18 = canvas.data.button18
+    canvas.create_window(300, 400, window=b18, anchor=W)
+    b19 = canvas.data.button19
+    canvas.create_window(350, 400, window=b19, anchor=W)
+    b20 = canvas.data.button20
+    canvas.create_window(450, 400, window=b20, anchor=W)
+    b7=canvas.data.button7
+    canvas.create_window(500,50,window=b7)
+    b22=canvas.data.button22
+    canvas.create_window(300,450,window=b22)
+    drawList(canvas)
+
+def createList():
+    message=canvas.data.list
+    if message!=[]:
+        wbk = xlwt.Workbook()
+        sheet = wbk.add_sheet("sheet 1")
+        tall_style = xlwt.easyxf('font:height 2160;')
+        t=time.strftime('%y-%m-%d',time.localtime(time.time()))
+        s0="日期"
+        s1="产品名称"
+        s2="产品型号"
+        s3="工厂"
+        s4="图片"
+        s5="价格（rmb）"
+        s6="价格（usd）"
+        s7="specification"
+        s8="packing"
+        s9="退税率"
+        s10="MOQ"
+        s11="packing size"
+        s12="其他信息"
+        sheet.write(0,0,s0.decode("utf-8"))
+        sheet.write(0,1,s1.decode("utf-8"))
+        sheet.write(0,2,s2.decode("utf-8"))
+        sheet.write(0,3,s3.decode("utf-8"))
+        sheet.write(0,4,s4.decode("utf-8"))
+        sheet.write(0,5,s5.decode("utf-8"))
+        sheet.write(0,6,s6.decode("utf-8"))
+        sheet.write(0,7,s7.decode("utf-8"))
+        sheet.write(0,8,s8.decode("utf-8"))
+        sheet.write(0,9,s9.decode("utf-8"))
+        sheet.write(0,10,s10.decode("utf-8"))
+        sheet.write(0,11,s11.decode("utf-8"))
+        sheet.write(0,12,s12.decode("utf-8"))
+        sheet.col(0).width = 5555
+        sheet.col(1).width = 5555
+        sheet.col(2).width = 5555
+        sheet.col(3).width = 5555
+        sheet.col(4).width = 7777
+        sheet.col(5).width = 5555
+        sheet.col(6).width = 5555
+        sheet.col(7).width = 5555
+        sheet.col(8).width = 5555
+        sheet.col(9).width = 5555
+        sheet.col(10).width = 5555
+        sheet.col(11).width = 5555
+        sheet.col(12).width = 5555
+        rows=len(message)
+        cols=13
+        for row in xrange(rows):
+            for col in xrange(cols):
+                if col==0:
+                    sheet.write(row+1,col,t)
+                elif col==4:
+                    sheet.insert_bitmap(message[row][col-1], row+1, 4, 10, 2,1,0.1)
+                elif col==5 or col==6:
+                    sheet.write(row+1,col,xlwt.Formula(message[row][col-1]))
+                else:
+                    sheet.write(row+1,col,message[row][col-1].decode("utf-8"))
+            sheet.row(row+1).set_style(tall_style)
+        name="C:/Users/Administrator/Desktop/offerList.xls"
+        wbk.save(name)
+        message = "请打开list.xls查看您的报价单"
+        title = "报价单制作完毕"
+        tkMessageBox.showinfo(title, message)
+    else:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    
+
+def drawList(canvas):
+    canvas.create_text(80,80,text="产品名称",
+                       fill="red")
+    canvas.create_text(200,80,text="产品型号",
+                       fill="red")
+    canvas.create_text(320,80,text="工厂",
+                       fill="red")
+    canvas.create_text(450,80,text="当前价格",
+                       fill="red")
+    if canvas.data.list!=[]:
+        List=canvas.data.list
+        row=len(List)
+        for rows in xrange(row):
+            canvas.create_text(80,100+rows*20,
+                                text=List[rows][0],fill="purple")
+            canvas.create_text(200,100+rows*20,
+                                text=List[rows][1],fill="purple")
+            canvas.create_text(320,100+rows*20,
+                                text=List[rows][2],fill="purple")
+            canvas.create_text(450,100+rows*20,
+                                text=List[rows][4],fill="purple")
+
+def encodeMsg(msg):
+    try:
+        message = str(msg.encode("utf-8"))
+        return message
+    except:
+        return "None"
+
+def button15Pressed():# add item
+    message = "请输入工厂名称"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    canvas.data.factory = message
+    message = "请输入产品名称"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    canvas.data.name = message
+    message = "请输入产品型号"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And update and redraw our canvas
+    canvas.data.itemNo = message
+    redrawAll(canvas)
+    result=search0([upper(canvas.data.name),
+            upper(canvas.data.itemNo),
+            upper(canvas.data.factory)])
+    if result ==[]:
+        message = "未找到该产品"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        canvas.data.list+=result
+    canvas.data.date='None'
+    canvas.data.factory='None'
+    canvas.data.itemNo='None'
+    redrawAll(canvas)
+          
+
+def button16Pressed():# +
+    if canvas.data.list==[]:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        message = "请输入加数"
+        title = "ROCK"
+        response = tkSimpleDialog.askstring(title, message)
+        try:
+            message = eval(response)
+            temp=canvas.data.list[-1][4]
+            canvas.data.list[-1][4]=str("("+temp+"+"+str(message)+")")
+            temp=canvas.data.list[-1][5]
+            canvas.data.list[-1][5]=str("("+temp+"+"+str(message)+")")
+        except:
+            message = "无效输入"
+            title = "Error"
+            tkMessageBox.showwarning(title, message)
+    redrawAll(canvas)
+
+def button17Pressed():# -
+    if canvas.data.list==[]:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        message = "请输入减数"
+        title = "ROCK"
+        response = tkSimpleDialog.askstring(title, message)
+        try:
+            message = eval(response)
+            temp=canvas.data.list[-1][4]
+            canvas.data.list[-1][4]=str("("+temp+"-"+str(message)+")")
+            temp=canvas.data.list[-1][5]
+            canvas.data.list[-1][5]=str("("+temp+"-"+str(message)+")")
+        except:
+            message = "无效输入"
+            title = "Error"
+            tkMessageBox.showwarning(title, message)
+    redrawAll(canvas)
+
+def button18Pressed():# *
+    if canvas.data.list==[]:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        message = "请输入乘数"
+        title = "ROCK"
+        response = tkSimpleDialog.askstring(title, message)
+        try:
+            message = eval(response)
+            temp=canvas.data.list[-1][4]
+            canvas.data.list[-1][4]=str("("+temp+"*"+str(message)+")")
+            temp=canvas.data.list[-1][5]
+            canvas.data.list[-1][5]=str("("+temp+"*"+str(message)+")")
+        except:
+            message = "无效输入"
+            title = "Error"
+            tkMessageBox.showwarning(title, message)
+    redrawAll(canvas)
+
+def button19Pressed():# /
+    if canvas.data.list==[]:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        message = "请输入除数"
+        title = "ROCK"
+        response = tkSimpleDialog.askstring(title, message)
+        try:
+            message = eval(response)
+            temp=canvas.data.list[-1][4]
+            canvas.data.list[-1][4]=str("("+temp+"/"+str(message)+")")
+            temp=canvas.data.list[-1][5]
+            canvas.data.list[-1][5]=str("("+temp+"/"+str(message)+")")
+        except:
+            message = "无效输入"
+            title = "Error"
+            tkMessageBox.showwarning(title, message)
+    redrawAll(canvas)
+
+def button20Pressed():# remove item
+    if canvas.data.list==[]:
+        message = "无效操作"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        canvas.data.list.pop()
+    redrawAll(canvas)
+
+def showInfo():
+    message = "请打开result.xls来查看结果"
+    title = "搜索完成"
+    tkMessageBox.showinfo(title, message)
+
+
+def button8Pressed():#search for 工厂
+    searchFactory()
+
+def button9Pressed():#search for name
+    searchName()
+
+def button10Pressed():#search for item No.
+    searchItemNo()
+
+def button11Pressed():# specific search
+    searchAll()
+
+def searchAll():
+    canvas.data.output=None
+    # AskString Box
+    message = "请输入多个关键词"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    try:
+        message = splitMsg(upper(str(response.encode("utf-8"))))
+        if message==[""]:
+            canvas.data.output=canvas.data.data
+            output()
+            redrawAll(canvas)
+            showInfo()
+        else:
+            canvas.data.output=search1(message)
+            output()
+            redrawAll(canvas)
+            showInfo()
+    except:
+        message = "找不到该产品"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+
+
+def search1(message):
+    result=[]
+    for c in canvas.data.data:
+        if subsetR(message,c)==True:
+            result+=[c]
+    return result
+
+def subsetR(message, L):
+    for s in message:
+        if mohuSearch(s,L)==False:
+            return False
+    return True
+
+def mohuSearch(msg,L):
+    for c in L:
+        if msg in c:
+            return True
+    return False
+
+def splitMsg(message):
+    counter=message.count(" ")
+    L=[]
+    while counter>=0:
+        index=message.find(" ")
+        if counter>0:
+            L+=[message[0:index]]
+            message=message[(index+1)::]
+        else:
+            L+=[message]
+        counter-=1
+    return L
+
+
+def search0(message):
+    result=[]
+    for c in canvas.data.data:
+        if subset(message,c)==True:
+            result+=[c]
+    return result
+
+def subset(message, L):
+    for s in message:
+        if s not in L:
+            return False
+    return True
+
+
+def searchName():
+    canvas.data.output=None
+    # AskString Box
+    message = "请输入产品名称"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    isVaild(message)
+
+def isVaild(message):
+    if message=="None":# one input is missing!
+        message1 = "无效输入"
+        title = "Error"
+        tkMessageBox.showwarning(title, message1)
+    else:
+        canvas.data.output=search(upper(message))
+        output()
+        redrawAll(canvas)
+        showInfo()
+
+def upper(message):
+    newMsg=""
+    for s in message:
+        if str.isupper(s)==True:
+            newMsg+=str.lower(s)
+        else:
+            newMsg+=s
+    return newMsg
+
+
+def searchItemNo():
+    canvas.data.output=None
+    # AskString Box
+    message = "请输入产品型号"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    isVaild(message)
+
+
+def searchFactory():
+    canvas.data.output=None
+    # AskString Box
+    message = "请输入产品工厂"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    isVaild(message)
+
+def search(message):
+    result=[]
+    for c in canvas.data.data:
+        if message in c:
+            result+=[c]
+    return result
+
+def button21Pressed():
+    canvas.data.inMainMenu=False
+    canvas.data.inSearch=False
+    canvas.data.inImport=False
+    canvas.data.inDelete=False
+    canvas.data.inOffer=True
+    redrawAll(canvas)
+
+def button13Pressed():
+    canvas.data.inMainMenu=False
+    canvas.data.inSearch=False
+    canvas.data.inImport=False
+    canvas.data.inDelete=True
+    canvas.data.inOffer=False
+    redrawAll(canvas)
+    
+
+def button5Pressed():
+    canvas.data.inMainMenu=False
+    canvas.data.inSearch=False
+    canvas.data.inImport=True
+    canvas.data.inDelete=False
+    canvas.data.inOffer=False
+    redrawAll(canvas)
+
+def button6Pressed():
+    canvas.data.inMainMenu=False
+    canvas.data.inSearch=True
+    canvas.data.inImport=False
+    canvas.data.inDelete=False
+    canvas.data.inOffer=False
+    redrawAll(canvas)
+
+def button7Pressed():
+    loadData()
+    canvas.data.inMainMenu=True
+    canvas.data.inSearch=False
+    canvas.data.inImport=False
+    canvas.data.inDelete=False
+    canvas.data.inOffer=False
+    canvas.data.itemNo = "None"
+    canvas.data.name = "None"
+    canvas.data.factory = "None"
+    canvas.data.otherInfo = "None"
+    canvas.data.price = "None"
+    redrawAll(canvas)
+    
+
+def button4Pressed():
+    global canvas
+    importData()
+
+def button3Pressed():
+    global canvas
+    factory()
+
+def button2Pressed():
+    global canvas
+    itemNo()
+
+def button1Pressed():
+    global canvas
+    name()
+
+def button0Pressed():
+    otherInfo()
+
+def button12Pressed():
+    price()
+
+def button14Pressed():
+    deleteItem()
+
+def deleteItem():
+    loadData()
+    if (canvas.data.name =="None" or
+        canvas.data.itemNo =="None" or
+        canvas.data.factory =="None"):# one input is missing!
+        message = "无效输入!"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    elif search0([upper(canvas.data.name), upper(canvas.data.itemNo),
+          upper(canvas.data.factory)])==[]:# data doesn't exist
+        message = "该产品不存在!"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        item=search0([upper(canvas.data.name),
+                 upper(canvas.data.itemNo),
+                 upper(canvas.data.factory)])[0]
+        data=canvas.data.data
+        data.remove(item)
+        saveData()
+        canvas.data.name="None"
+        canvas.data.itemNo="None"
+        canvas.data.factory="None"
+        canvas.data.otherInfo="None"
+        canvas.data.price="None"
+    redrawAll(canvas)
+
+def usd():
+    # AskString Box
+    message = "请输入产品USD"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.usd = message
+    redrawAll(canvas)
+
+def speci():
+    # AskString Box
+    message = "请输入specification"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.speci = message
+    redrawAll(canvas)
+
+def pack():
+    # AskString Box
+    message = "请输入产品packing种类"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.pack = message
+    redrawAll(canvas)
+
+def tax():
+    # AskString Box
+    message = "请输入产品退税率"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.tax = message
+    redrawAll(canvas)
+
+def moq():
+    # AskString Box
+    message = "请输入产品MOQ"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.moq = message
+    redrawAll(canvas)
+
+def size():
+    # AskString Box
+    message = "请输入产品packing size"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.size = message
+    redrawAll(canvas)
+
+def photo():
+    # AskString Box
+    message = "请输入产品图片名称"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.photo = message
+    redrawAll(canvas)
+    
+
+def price():
+    # AskString Box
+    message = "请输入产品价格"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.price = message
+    redrawAll(canvas)
+
+def otherInfo():
+    # AskString Box
+    message = "请输入其他信息"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.otherInfo = message
+    redrawAll(canvas)
+
+def importData():
+    loadData()
+    if (canvas.data.name =="None" or
+        canvas.data.itemNo =="None" or
+        canvas.data.factory =="None" or
+        canvas.data.price =="None" or
+        canvas.data.usd =="None" or
+        canvas.data.speci =="None" or
+        canvas.data.pack =="None" or
+        canvas.data.tax =="None" or
+        canvas.data.moq =="None" or
+        canvas.data.size =="None" or
+        canvas.data.photo =="None"):# one input is missing!
+        message = "无效输入!"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    elif search0([upper(canvas.data.name), upper(canvas.data.itemNo),
+          upper(canvas.data.factory)])!=[]:# data already exist
+        message = "数据已经存在!"
+        title = "Error"
+        tkMessageBox.showwarning(title, message)
+    else:
+        canvas.data.data+=[[upper(canvas.data.name),
+                            upper(canvas.data.itemNo),
+                            upper(canvas.data.factory),
+                            canvas.data.photo,
+                            upper(canvas.data.price),
+                            upper(canvas.data.usd),
+                            upper(canvas.data.speci),
+                            upper(canvas.data.pack),
+                            upper(canvas.data.tax),
+                            upper(canvas.data.moq),
+                            upper(canvas.data.size),
+                            canvas.data.otherInfo]]
+        saveData()
+        canvas.data.name="None"
+        canvas.data.itemNo="None"
+        canvas.data.factory="None"
+        canvas.data.otherInfo="None"
+        canvas.data.price="None"
+        canvas.data.usd="None"
+        canvas.data.speci="None"
+        canvas.data.pack="None"
+        canvas.data.tax="None"
+        canvas.data.moq="None"
+        canvas.data.size="None"
+    redrawAll(canvas)
+
+
+def factory():
+    global canvas
+    # AskString Box
+    message = "请输入产品工厂"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.factory = message
+    redrawAll(canvas)
+
+def name():
+    global canvas
+    # AskString Box
+    message = "请输入产品名称"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.name = message
+    redrawAll(canvas)
+
+
+def itemNo():
+    global canvas
+    # AskString Box
+    message = "请输入产品型号"
+    title = "ROCK"
+    response = tkSimpleDialog.askstring(title, message)
+    message = encodeMsg(response)
+    # And upname and redraw our canvas
+    canvas.data.itemNo = message
+    redrawAll(canvas)
+    
+def redrawAll(canvas):
+    canvas.delete(ALL)
+    # background (fill canvas)
+    canvas.create_rectangle(0,0,1080,1900,fill="white")
+    # print message
+    if canvas.data.inImport==True:
+        drawImport(canvas)
+    elif canvas.data.inMainMenu==True:
+        drawMain(canvas)
+    elif canvas.data.inDelete==True:
+        drawDelete(canvas)
+    elif canvas.data.inOffer==True:
+        drawOffer(canvas)
+    else:
+        drawSearch(canvas)
+
+def drawDelete(canvas):
+    name = "产品名称: " + str(canvas.data.name)
+    canvas.create_text(100,130,text=name)
+    b1 = canvas.data.button1
+    canvas.create_window(100, 100, window=b1)
+    itemNo = "产品型号: " + str(canvas.data.itemNo)
+    canvas.create_text(300,130,text=itemNo)
+    b2 = canvas.data.button2
+    canvas.create_window(300, 100, window=b2)
+    factory = "工厂: " + str(canvas.data.factory)
+    canvas.create_text(500,130,text=factory)
+    b3 = canvas.data.button3
+    canvas.create_window(500, 100, window=b3)
+    b14 = canvas.data.button14
+    canvas.create_window(300,250,window=b14)
+    b7=canvas.data.button7
+    canvas.create_window(500,50,window=b7)
+    title="删除产品"
+    canvas.create_text(300,60,text=title,
+                       fill="purple", font="times 26 bold")
+
+def drawMain(canvas):
+    title="ROCK 数据库软件"
+    canvas.create_text(300,60,text=title,
+                       fill="purple", font="times 26 bold")
+    b5 = canvas.data.button5
+    canvas.create_window(300, 150, window=b5)
+    b6 = canvas.data.button6
+    canvas.create_window(300, 200, window=b6)
+    b13 = canvas.data.button13
+    canvas.create_window(300, 250, window=b13)
+    b21 = canvas.data.button21
+    canvas.create_window(300, 300, window=b21)
+
+def drawSearch(canvas):
+    title="数据搜索"
+    canvas.create_text(300,50,text=title,
+                       fill="purple", font="times 26 bold")
+    b8 = canvas.data.button8
+    canvas.create_window(150, 150, window=b8)
+    b9 = canvas.data.button9
+    canvas.create_window(150, 200, window=b9)
+    b10 = canvas.data.button10
+    canvas.create_window(150, 250, window=b10)
+    b11 = canvas.data.button11
+    canvas.create_window(450, 150, window=b11)
+    b7=canvas.data.button7
+    canvas.create_window(500,50,window=b7)
+    
+    
+def drawImport(canvas):
+    title="数据导入"
+    canvas.create_text(300,50,text=title,
+                       fill="purple", font="times 26 bold")
+    name = "产品名称: " + str(canvas.data.name)
+    canvas.create_text(100,130,text=name)
+    b0 = canvas.data.button0
+    canvas.create_window(500, 200, window=b0)
+    otherInfo = str(canvas.data.otherInfo)
+    canvas.create_text(500,230,text=otherInfo)
+    b1 = canvas.data.button1
+    canvas.create_window(100, 100, window=b1)
+    itemNo = "产品型号: " + str(canvas.data.itemNo)
+    canvas.create_text(300,130,text=itemNo)
+    b2 = canvas.data.button2
+    canvas.create_window(300, 100, window=b2)
+    factory = "工厂: " + str(canvas.data.factory)
+    canvas.create_text(500,130,text=factory)
+    b3 = canvas.data.button3
+    canvas.create_window(500, 100, window=b3)
+    b4 = canvas.data.button4
+    canvas.create_window(300, 470, window=b4)
+    b7=canvas.data.button7
+    canvas.create_window(500,50,window=b7)
+    b12 = canvas.data.button12
+    canvas.create_window(100, 200, window=b12)
+    price = "价格: " + str(canvas.data.price)
+    canvas.create_text(100,230,text=price)
+    b23 = canvas.data.button23
+    canvas.create_window(300, 200, window=b23)
+    usd = "USD: " + str(canvas.data.usd)
+    canvas.create_text(300,230,text=usd)
+    b24 = canvas.data.button24
+    canvas.create_window(100, 300, window=b24)
+    speci = "说明: " + str(short(canvas.data.speci))
+    canvas.create_text(100,330,text=speci)
+    b25 = canvas.data.button25
+    canvas.create_window(300, 300, window=b25)
+    pack = "包装: " + str(canvas.data.pack)
+    canvas.create_text(300,330,text=pack)
+    b26 = canvas.data.button26
+    canvas.create_window(300, 400, window=b26)
+    tax = "退税率: " + str(canvas.data.tax)
+    canvas.create_text(300,430,text=tax)
+    b27 = canvas.data.button27
+    canvas.create_window(500, 300, window=b27)
+    moq = "MOQ: " + str(canvas.data.moq)
+    canvas.create_text(500,330,text=moq)
+    b28 = canvas.data.button28
+    canvas.create_window(100, 400, window=b28)
+    size = "size: " + str(canvas.data.size)
+    canvas.create_text(100,430,text=size)
+    b29 = canvas.data.button29
+    canvas.create_window(500, 400, window=b29)
+    photo = "图片: " + str(canvas.data.photo)
+    canvas.create_text(500,430,text=photo)
+
+def short(msg):
+    if len(msg)>=5:
+        return (msg[:6]+'...')
+    else:
+        return msg
+
+def init(root, canvas):
+    canvas.data.list=[]
+    canvas.data.output=None
+    canvas.data.inMainMenu=True
+    canvas.data.inSearch=False
+    canvas.data.inImport=False
+    canvas.data.inDelete=False
+    canvas.data.inOffer=False
+    canvas.data.itemNo = "None"
+    canvas.data.name = "None"
+    canvas.data.factory = "None"
+    canvas.data.otherInfo = "None"
+    canvas.data.price = "None"
+    canvas.data.usd="None"
+    canvas.data.speci="None"
+    canvas.data.pack="None"
+    canvas.data.tax="None"
+    canvas.data.moq="None"
+    canvas.data.size="None"
+    canvas.data.photo="None"
+    b23 = Button(canvas, text="点击输入产品价格（USD）",
+                command=usd)
+    b24 = Button(canvas, text="点击输入产品说明",
+                command=speci)
+    b25 = Button(canvas, text="点击输入产品包装",
+                command=pack)
+    b26 = Button(canvas, text="点击输入退税率",
+                command=tax)
+    b27 = Button(canvas, text="点击输入MOQ",
+                command=moq)
+    b28 = Button(canvas, text="点击输入包装大小",
+                command=size)
+    b29 = Button(canvas, text="点击输入图片名称",
+                command=photo)
+    b0 = Button(canvas, text="点击输入其他信息",
+                command=button0Pressed)
+    b1 = Button(canvas, text="点击输入产品名称", command=button1Pressed)
+    b2 = Button(canvas, text="点击输入产品型号",
+                command=button2Pressed)
+    b3 = Button(canvas, text="点击输入工厂",
+                command=button3Pressed)
+    b4 = Button(canvas, text="导入数据",
+                command=button4Pressed)
+    b5=Button(canvas, text="导入数据",
+                command=button5Pressed)
+    b6=Button(canvas, text="搜索数据",
+                command=button6Pressed)
+    b7=Button(canvas, text="返回标题",
+                command=button7Pressed)
+    b8=Button(canvas, text="查找工厂",
+                command=button8Pressed)
+    b9=Button(canvas, text="查找产品名称",
+                command=button9Pressed)
+    b10=Button(canvas, text="查找产品型号",
+                command=button10Pressed)
+    b11=Button(canvas, text="特殊搜索",
+                command=button11Pressed)
+    b12=Button(canvas, text="点击输入价格",
+                command=button12Pressed)
+    b13=Button(canvas, text="删除产品",
+                command=button13Pressed)
+    b14=Button(canvas, text="删除产品",
+                command=button14Pressed)
+    b15=Button(canvas, text="添加产品",
+                command=button15Pressed)
+    b16=Button(canvas, text="加",
+                command=button16Pressed)
+    b17=Button(canvas, text="减",
+                command=button17Pressed)
+    b18=Button(canvas, text="乘",
+                command=button18Pressed)
+    b19=Button(canvas, text="除",
+                command=button19Pressed)
+    b20=Button(canvas, text="删除产品",
+                command=button20Pressed)
+    b21=Button(canvas, text="报价单制作",
+                command=button21Pressed)
+    b22=Button(canvas, text="报价单制作",
+                command=createList)
+    canvas.data.button0 = b0
+    canvas.data.button1 = b1
+    canvas.data.button2 = b2
+    canvas.data.button3 = b3
+    canvas.data.button4 = b4
+    canvas.data.button5 = b5
+    canvas.data.button6 = b6
+    canvas.data.button7 = b7
+    canvas.data.button8 = b8
+    canvas.data.button9 = b9
+    canvas.data.button10 = b10
+    canvas.data.button11 = b11
+    canvas.data.button12 = b12
+    canvas.data.button13 = b13
+    canvas.data.button14 = b14
+    canvas.data.button15 = b15
+    canvas.data.button16 = b16
+    canvas.data.button17 = b17
+    canvas.data.button18 = b18
+    canvas.data.button19 = b19
+    canvas.data.button20 = b20
+    canvas.data.button21 = b21
+    canvas.data.button22 = b22
+    canvas.data.button23 = b23
+    canvas.data.button24 = b24
+    canvas.data.button25 = b25
+    canvas.data.button26 = b26
+    canvas.data.button27 = b27
+    canvas.data.button28 = b28
+    canvas.data.button29 = b29
+    canvas.pack()
+    redrawAll(canvas)
+
+def output():
+    wbk = xlwt.Workbook()
+    sheet = wbk.add_sheet("sheet 1")
+    message=canvas.data.output
+    tall_style = xlwt.easyxf('font:height 2160;')
+    s1="产品名称"
+    s2="产品型号"
+    s3="工厂"
+    s4="图片"
+    s5="价格（rmb）"
+    s6="价格（usd）"
+    s7="specification"
+    s8="packing"
+    s9="退税率"
+    s10="MOQ"
+    s11="packing size"
+    s12="其他信息"
+    sheet.write(0,0,s1.decode("utf-8"))
+    sheet.write(0,1,s2.decode("utf-8"))
+    sheet.write(0,2,s3.decode("utf-8"))
+    sheet.write(0,3,s4.decode("utf-8"))
+    sheet.write(0,4,s5.decode("utf-8"))
+    sheet.write(0,5,s6.decode("utf-8"))
+    sheet.write(0,6,s7.decode("utf-8"))
+    sheet.write(0,7,s8.decode("utf-8"))
+    sheet.write(0,8,s9.decode("utf-8"))
+    sheet.write(0,9,s10.decode("utf-8"))
+    sheet.write(0,10,s11.decode("utf-8"))
+    sheet.write(0,11,s12.decode("utf-8"))
+    sheet.col(0).width = 5555
+    sheet.col(1).width = 5555
+    sheet.col(2).width = 5555
+    sheet.col(3).width = 7777
+    sheet.col(4).width = 5555
+    sheet.col(5).width = 5555
+    sheet.col(6).width = 5555
+    sheet.col(7).width = 5555
+    sheet.col(8).width = 5555
+    sheet.col(9).width = 5555
+    sheet.col(10).width = 5555
+    sheet.col(11).width = 5555
+    sheet.col(12).width = 5555
+    rows=len(message)
+    cols=12
+    for row in xrange(rows):
+        for col in xrange(cols):
+            if col==3:
+                sheet.insert_bitmap(str(message[row][col]),
+                                    row+1, 3, 10, 3,1,0.1)
+            else:
+                sheet.write(row+1,col,message[row][col].decode("utf-8"))
+        sheet.row(row+1).set_style(tall_style)
+    t=time.strftime('%m%d%H%M%S',time.localtime(time.time()))
+    name="C:/Users/Administrator/Desktop/result_%s.xls"% t
+    wbk.save(name)
+
+
+def loadData():
+    f=file('data.data')
+    canvas.data.data=p.load(f)
+
+def saveData():
+    loadfile = 'data.data'
+    # the name of the file where we will store the object
+    L = canvas.data.data
+    # Write to the file
+    f = file(loadfile, 'w')
+    p.dump(L, f) # dump the object to a file
+    f.close()
+
+
+########### copy-paste below here ###########
+
+def run():
+    # create the root and the canvas
+    root = Tk()
+    global canvas # make canvas global for button1Pressed function
+    root.resizable(width=FALSE, height=FALSE)
+    canvas = Canvas(root, width=600, height=500)
+    canvas.pack(fill=BOTH, expand=YES)
+    # Store canvas in root and in canvas itself for callbacks
+    root.canvas = canvas.canvas = canvas
+    # Set up canvas data and call init
+    class Struct: pass
+    canvas.data = Struct()
+    canvas.data.data=[]
+    loadData()
+    init(root, canvas)
+    # set up events
+    #root.bind("<Button-1>", mousePressed)
+    #root.bind("<Key>", keyPressed)
+    #timerFired(canvas)
+    # and launch the app
+    root.mainloop()  # This call BLOCKS (so your program waits until you close the window!)
+
+run()
